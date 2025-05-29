@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "criteria": {
+    "min_ou_line": 3.0,
+    "required_status": "half_time_break",
+    "status_id": 3
+  },
+  "description": "Over/Under 3.0+ Half-time Break Alert - Triggers only during half-time break",
+  "alert_type": "ou_3_no_score",
+  "match_requirements": [
+    "Over/Under lines >= 3.0",
+    "Match status must be Half-time break (ID: 3)",
+    "Fresh fetch only (no duplicates)",
+    "Live matches only"
+  ]
+}

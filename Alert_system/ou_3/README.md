@@ -351,19 +351,20 @@ def format_ou_match(match, daily_alert_number):
 def get_status_description(status_id):
     """Get status description from ID"""
     status_map = {
-        0: "Not Started",
-        1: "First Half", 
-        2: "Half Time",
-        3: "Second Half",
-        4: "Extra Time",
-        5: "Penalty Shootout",
-        6: "Full Time",
-        7: "Cancelled",
-        8: "Suspended",
+        1: "Not started",
+        2: "First half", 
+        3: "Half-time break",
+        4: "Second half",
+        5: "Extra time",
+        6: "Penalty shootout",
+        7: "Finished",
+        8: "Finished",
         9: "Postponed",
-        10: "To Be Determined",
-        11: "Delayed",
-        12: "Abandoned"
+        10: "Canceled",
+        11: "To be announced",
+        12: "Interrupted",
+        13: "Abandoned",
+        14: "Suspended"
     }
     return status_map.get(status_id, f"Unknown Status ({status_id})")
 ```
@@ -395,6 +396,39 @@ def load_config():
             "enabled": True,
             "criteria": {"min_ou_line": 3.0}  # DEFAULT CRITERIA
         }
+```
+
+## Status ID Mapping (STANDARD)
+
+All alerts use the standardized status ID mapping for match status identification:
+
+```python
+status_map = {
+    1: "Not started",
+    2: "First half",
+    3: "Half-time break",
+    4: "Second half",
+    5: "Extra time",
+    6: "Penalty shootout",
+    7: "Finished",
+    8: "Finished",
+    9: "Postponed",
+    10: "Canceled",
+    11: "To be announced",
+    12: "Interrupted",
+    13: "Abandoned",
+    14: "Suspended"
+}
+```
+
+### Live Match Filtering
+```python
+LIVE_STATUS_IDS = {2, 3, 4}  # First half, Half-time break, Second half
+
+def is_live_match(match_data):
+    """Check if match is live (First half, Half-time break, Second half)"""
+    status_id = match_data.get("status_id")
+    return status_id in LIVE_STATUS_IDS
 ```
 
 ## File Naming Conventions (STANDARD)
@@ -476,3 +510,102 @@ Wind: Light Breeze, 5.8 mph
 ```
 
 This foundation ensures consistency, reliability, and scalability across all alert modules in the Football Bot ecosystem.
+
+## Alert Variants and Specializations
+
+### Creating Specialized Alert Variants
+
+The alert architecture supports creating specialized variants with additional criteria. For example, the `ou_3_no_score` alert extends the basic OU 3.0+ functionality with additional scoreless game filtering:
+
+1. **Base Criteria**: O/U line >= 3.0
+2. **Specialized Criteria 1**: Status ID = 3 (Half-time break only)  
+3. **Specialized Criteria 2**: Scoreless at half-time (0-0)
+
+### Example Specialized Filter Functions
+
+```python
+def is_half_time_match(match_data):
+    """Check if match is at half time (status ID = 3)"""
+    status_id = match_data.get("status_id")
+    return status_id == HALF_TIME_STATUS_ID
+
+def is_scoreless_at_halftime(match_data):
+    """Check if match is scoreless (0-0) at half time"""
+    home_score = match_data.get("home_score", 0)
+    away_score = match_data.get("away_score", 0)
+    
+    # Convert to int if they're strings
+    try:
+        home_score = int(home_score) if home_score is not None else 0
+        away_score = int(away_score) if away_score is not None else 0
+    except (ValueError, TypeError):
+        return False
+    
+    return home_score == 0 and away_score == 0
+```
+
+### Multi-Criteria Alert Logic
+
+```python
+for match_id, match_data in matches.items():
+    # First check: Is match at half time?
+    if not is_half_time_match(match_data):
+        non_half_time_matches += 1
+        continue
+        
+    # Second check: Is the game scoreless (0-0)?
+    if not is_scoreless_at_halftime(match_data):
+        continue
+        
+    # Third check: Does it have qualifying O/U lines?
+    over_under = match_data.get("over_under", {})
+    has_qualifying_line = False
+    
+    # ... rest of logic
+```
+
+### Testing Alert Variants
+
+Create a test script with mock data to verify all criteria are working correctly:
+
+```python
+def test_individual_criteria():
+    # Create mock matches with various combinations of criteria
+    mock_matches = {
+        "match_001": {
+            "status_id": 3,        # Half-time break ✓
+            "home_score": 0,       # Scoreless ✓ 
+            "away_score": 0,       # Scoreless ✓
+            "over_under": {"line_1": {"line": 3.5}}  # >= 3.0 ✓
+        },
+        "match_002": {
+            "status_id": 3,        # Half-time break ✓
+            "home_score": 1,       # Not scoreless ✗
+            "away_score": 0,
+            "over_under": {"line_1": {"line": 3.0}}  # >= 3.0 ✓
+        }
+    }
+    
+    # Test each match against criteria
+    for match_id, match_data in mock_matches.items():
+        print(f"Match meets all criteria: {is_half_time_match(match_data) and 
+                                           is_scoreless_at_halftime(match_data) and
+                                           has_qualifying_line(match_data)}")
+```
+
+## Testing and Quality Assurance
+
+### Unit Testing Criteria
+
+Create test scripts for individual components:
+- Test status ID filtering
+- Test criteria-specific functions 
+- Test deduplication system
+- Test daily counter functionality
+
+### System Testing
+
+- Run the alert on mock data with various scenarios
+- Verify all logs and outputs match expected format
+- Test handling of edge cases and malformed data
+- Test integration with the alert manager

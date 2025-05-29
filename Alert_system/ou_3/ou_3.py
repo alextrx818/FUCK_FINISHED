@@ -29,8 +29,8 @@ DAILY_COUNTER_FILE = BASE_DIR / "daily_alert_count.json"
 # Step5 data location
 STEP5_JSON = Path("/root/CascadeProjects/Football_bot/step5/step5.json")
 
-# Live match status IDs
-LIVE_STATUS_IDS = {1, 2, 3}  # First Half, Half Time, Second Half
+# Live match status IDs (corrected mapping)
+LIVE_STATUS_IDS = {2, 3, 4}  # First half, Half-time break, Second half
 
 def get_eastern_time():
     """Get current Eastern time formatted string (same as step6)"""
@@ -111,7 +111,7 @@ def save_processed_matches(processed_matches, fetch_time):
         print(f"OU3 Alert: Error saving processed matches: {e}")
 
 def is_live_match(match_data):
-    """Check if match is live (First Half, Half Time, Second Half)"""
+    """Check if match is live (First half, Half-time break, Second half)"""
     status_id = match_data.get("status_id")
     return status_id in LIVE_STATUS_IDS
 
@@ -156,21 +156,22 @@ def load_config():
         }
 
 def get_status_description(status_id):
-    """Get status description from ID (same logic as step6)"""
+    """Get status description from ID (corrected mapping)"""
     status_map = {
-        0: "Not Started",
-        1: "First Half", 
-        2: "Half Time",
-        3: "Second Half",
-        4: "Extra Time",
-        5: "Penalty Shootout",
-        6: "Full Time",
-        7: "Cancelled",
-        8: "Suspended",
+        1: "Not started",
+        2: "First half",
+        3: "Half-time break",
+        4: "Second half",
+        5: "Extra time",
+        6: "Penalty shootout",
+        7: "Finished",
+        8: "Finished",
         9: "Postponed",
-        10: "To Be Determined",
-        11: "Delayed",
-        12: "Abandoned"
+        10: "Canceled",
+        11: "To be announced",
+        12: "Interrupted",
+        13: "Abandoned",
+        14: "Suspended"
     }
     return status_map.get(status_id, f"Unknown Status ({status_id})")
 
@@ -354,7 +355,7 @@ def check_ou_3_alert():
     skipped_matches = 0
     non_live_matches = 0
     
-    print(f"OU3 Alert: Scanning {total_matches} matches for O/U lines >= {min_line} (live matches only)")
+    print(f"OU3 Alert: Scanning {total_matches} matches for O/U lines >= {min_line} (live matches: first half, half-time break, second half only)")
     
     # Scan for qualifying matches
     for match_id, match_data in matches.items():
