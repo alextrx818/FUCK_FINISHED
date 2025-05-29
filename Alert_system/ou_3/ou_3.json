@@ -1,0 +1,12 @@
+{
+  "alert_name": "Over/Under 3.0+ Monitor",
+  "description": "Monitors matches with over/under lines of 3.0 or higher",
+  "enabled": true,
+  "criteria": {
+    "min_ou_line": 3.0,
+    "max_ou_line": null
+  },
+  "log_format": "step6_style",
+  "log_file": "ou_3.log",
+  "timezone": "America/New_York"
+}
